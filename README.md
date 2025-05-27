@@ -1,40 +1,63 @@
-# Replay Comment Counter
+# replay-counter
 
-Dropbox Replay の未解決コメント数をカウント表示する Chrome 拡張機能です。
+# Replay Counter
 
-## 機能
+🎥 Dropbox Replay の「未解決コメント」をカウント・可視化する Chrome 拡張機能
+🔄 This Chrome Extension counts and visualizes unresolved comments on Dropbox Replay
 
-- Dropbox Replay ページ上で未解決コメント数をリアルタイムで表示
-- ページ右上にバッジ表示で未解決コメント数を確認可能
-- コメントの追加・解決時に自動的にカウントを更新
-- 拡張機能アイコンクリックで現在の未解決コメント数をポップアップ表示
+---
 
-## インストール方法
+## 🗣 概要 | Overview
 
-1. このリポジトリをクローンまたはダウンロード
-2. Chrome ブラウザで `chrome://extensions` を開く
-3. 右上の「デベロッパーモード」をオン
-4. 「パッケージ化されていない拡張機能を読み込む」をクリック
-5. ダウンロードしたフォルダを選択
+**日本語**
+Replay Counter は、Dropbox Replay 上の「未解決コメント」を自動でカウントし、画面上にバッジ表示します。
+対応漏れを防ぎ、編集作業を効率化します。
 
-## 使用方法
+**English**
+Replay Counter automatically counts unresolved comments on Dropbox Replay and displays a badge in the UI.
+It helps editors prevent oversight and streamline feedback workflows.
 
-1. Dropbox Replay のページを開く
-2. ページ右上に未解決コメント数が表示されます
-3. コメントの追加・解決時に自動的にカウントが更新されます
-4. 拡張機能アイコンをクリックすると現在の未解決コメント数がポップアップ表示されます
+---
 
-## 開発予定の機能
+## ✨ 機能 | Features
 
-- Slack 通知機能
-- 定期スキャン機能
-- スプレッドシート出力機能
-- タグ管理機能
+- 🔴 未解決コメントの自動カウント
+- 🎯 画面右上にバッジで件数表示
+- 🔔 今後、Slack 通知や CSV 出力機能も予定
 
-## ライセンス
+---
 
-MIT License
+## 🛠 インストール手順 | Installation
 
-## 作者
+1. このリポジトリをクローンまたは ZIP でダウンロード
+2. Chrome で `chrome://extensions/` を開く
+3. 「デベロッパーモード」を ON にする
+4. 「パッケージ化されていない拡張機能を読み込む」をクリックし、このフォルダを選択
 
-[あなたの名前]
+---
+
+## 📷 スクリーンショット | Screenshot
+
+（ここに `screenshot.png` を貼る）
+
+---
+
+## 📦 今後の予定 | Roadmap
+
+- [ ] Slack 通知機能
+- [ ] 日次レポート生成
+- [ ] CSV エクスポート
+- [ ] 全体ダッシュボード機能
+
+---
+
+## 🤝 コントリビュート歓迎 | Contributing
+
+バグ報告・機能提案・Pull Request 大歓迎です！
+Feel free to open issues or pull requests.
+
+---
+
+## 📄 ライセンス | License
+
+MIT License © 2025 ii kata
