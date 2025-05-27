@@ -1,13 +1,22 @@
 // 未解決コメント数を抽出する関数
 function extractUnresolvedCount() {
-  const elements = document.querySelectorAll('[data-testid="comment-icon"]');
+  // 未解決タブ内のコメントを探す
+  const unresolvedComments = document.querySelectorAll(".sc-jsvCbA");
   let unresolvedCount = 0;
 
-  elements.forEach((el) => {
-    const badge = el.querySelector('[data-testid="unresolved-badge"]');
-    if (badge) unresolvedCount++;
+  console.log("検出されたコメント要素:", unresolvedComments.length);
+
+  unresolvedComments.forEach((comment) => {
+    // 解決済みボタンが存在するか確認
+    const resolveButton = comment.querySelector(
+      'button[aria-label="コメント スレッドを解決済みにする"]'
+    );
+    if (resolveButton) {
+      unresolvedCount++;
+    }
   });
 
+  console.log("未解決コメント数:", unresolvedCount);
   return unresolvedCount;
 }
 
@@ -38,19 +47,43 @@ function showBadge(count) {
 // メイン処理
 function main() {
   const count = extractUnresolvedCount();
-  console.log(`未解決コメント数: ${count}`);
   showBadge(count);
 }
 
-// ページ読み込み完了時に実行
-document.addEventListener("DOMContentLoaded", main);
+// ページの読み込み完了を待ってから処理を開始
+function initialize() {
+  // 初回実行（少し遅延を入れてDOMの構築を待つ）
+  setTimeout(main, 1000);
 
-// DOMの変更を監視して再カウント
-// const observer = new MutationObserver(() => {
-//   main();
-// });
+  // DOMの変更を監視
+  const observer = new MutationObserver((mutations) => {
+    // コメント関連の変更があった場合のみ再カウント
+    const shouldRecount = mutations.some((mutation) => {
+      const target = mutation.target;
+      return (
+        target.closest(".sc-jsvCbA") || // コメント要素
+        target.closest('button[aria-label="コメント スレッドを解決済みにする"]')
+      ); // 解決ボタン
+    });
 
-// observer.observe(document.body, {
-//   childList: true,
-//   subtree: true
-// });
+    if (shouldRecount) {
+      // パフォーマンスのために少し遅延させる
+      setTimeout(main, 100);
+    }
+  });
+
+  // 監視の開始
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    characterData: true,
+  });
+}
+
+// ページの読み込み完了を待つ
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initialize);
+} else {
+  initialize();
+}
