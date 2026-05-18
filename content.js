@@ -15,6 +15,23 @@ function readIsResolved(el) {
 
 const TAB_SWITCH_DELAY_MS = 200;
 
+// True while fetchCounts is switching tabs — suppresses observer re-entrancy.
+let isFetching = false;
+
+// Reads counts from the current DOM (must be on "すべて" tab).
+function readCountsFromDOM() {
+  const containers = document.querySelectorAll('[data-testid="comment-thread-container"]');
+  let total = 0;
+  let unresolved = 0;
+  containers.forEach((el) => {
+    const isResolved = readIsResolved(el);
+    if (isResolved === null) return;
+    total++;
+    if (!isResolved) unresolved++;
+  });
+  return { total, unresolved };
+}
+
 // Temporarily switches to "すべて" tab, reads all thread resolved states via React fiber,
 // then restores the original active tab.
 // Returns Promise<{ total: number, unresolved: number }>
@@ -28,28 +45,31 @@ function fetchCounts() {
 
     const activeTab = document.querySelector('[role="tab"][aria-selected="true"]');
 
+    // Already on "すべて" tab — read directly without switching.
+    if (activeTab?.getAttribute('data-testid') === 'all-comments-section') {
+      resolve(readCountsFromDOM());
+      return;
+    }
+
+    isFetching = true;
     try {
       allTab.click();
     } catch (_) {
+      isFetching = false;
       activeTab?.click();
       resolve({ total: 0, unresolved: 0 });
       return;
     }
 
     setTimeout(() => {
-      let total = 0;
-      let unresolved = 0;
+      let counts = { total: 0, unresolved: 0 };
       try {
-        const containers = document.querySelectorAll('[data-testid="comment-thread-container"]');
-        containers.forEach((el) => {
-          const isResolved = readIsResolved(el);
-          if (isResolved === null) return;
-          total++;
-          if (!isResolved) unresolved++;
-        });
+        counts = readCountsFromDOM();
       } finally {
         activeTab?.click();
-        resolve({ total, unresolved });
+        resolve(counts);
+        // Reset after a tick so the tab-restore mutation is ignored by the observer.
+        setTimeout(() => { isFetching = false; }, 0);
       }
     }, TAB_SWITCH_DELAY_MS);
   });
@@ -150,6 +170,9 @@ function observe(onUpdate) {
   const debouncedUpdate = debounce(onUpdate, 800);
 
   const mo = new MutationObserver((mutations) => {
+    // Ignore mutations caused by our own tab switching in fetchCounts.
+    if (isFetching) return;
+
     if (location.href !== currentUrl) {
       currentUrl = location.href;
       onUpdate();
@@ -164,9 +187,6 @@ function observe(onUpdate) {
              n.querySelector?.('[data-testid="comment-thread-container"]'))
         );
       }
-      if (m.type === 'attributes' && m.attributeName === 'aria-selected') {
-        return true;
-      }
       return false;
     });
 
@@ -176,8 +196,6 @@ function observe(onUpdate) {
   mo.observe(document.body, {
     childList: true,
     subtree: true,
-    attributes: true,
-    attributeFilter: ['aria-selected'],
   });
 }
 
