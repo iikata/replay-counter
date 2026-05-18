@@ -18,7 +18,7 @@ const TAB_SWITCH_DELAY_MS = 200;
 // True while fetchCounts is switching tabs — suppresses observer re-entrancy.
 let isFetching = false;
 
-// Reads counts from the current DOM (must be on "すべて" tab).
+// Reads counts from the DOM when already on "すべて" tab.
 function readCountsFromDOM() {
   const containers = document.querySelectorAll('[data-testid="comment-thread-container"]');
   let total = 0;
@@ -32,9 +32,35 @@ function readCountsFromDOM() {
   return { total, unresolved };
 }
 
-// Temporarily switches to "すべて" tab, reads all thread resolved states via React fiber,
-// then restores the original active tab.
-// Returns Promise<{ total: number, unresolved: number }>
+// Reads counts from whichever tab is currently visible — no tab switching.
+// Uses cachedTotal for the total count (obtained from the initial full fetch).
+function readCountsFromCurrentTab(cachedTotal) {
+  const activeTestId = document.querySelector('[role="tab"][aria-selected="true"]')
+    ?.getAttribute('data-testid');
+  const containers = document.querySelectorAll('[data-testid="comment-thread-container"]');
+  const visibleCount = containers.length;
+
+  if (activeTestId === 'all-comments-section') {
+    let unresolved = 0;
+    containers.forEach((el) => {
+      if (readIsResolved(el) === false) unresolved++;
+    });
+    return { total: cachedTotal, unresolved };
+  }
+
+  if (activeTestId === 'unresolved-comments-section') {
+    return { total: cachedTotal, unresolved: visibleCount };
+  }
+
+  if (activeTestId === 'resolved-comments-section') {
+    return { total: cachedTotal, unresolved: Math.max(0, cachedTotal - visibleCount) };
+  }
+
+  return { total: cachedTotal, unresolved: 0 };
+}
+
+// Switches to "すべて" tab once to get accurate total + unresolved, then restores.
+// Called only on initial load and SPA navigation. Returns Promise<{ total, unresolved }>.
 function fetchCounts() {
   return new Promise((resolve) => {
     const allTab = document.querySelector('[data-testid="all-comments-section"]');
@@ -165,17 +191,18 @@ function debounce(fn, delay) {
 
 let currentUrl = location.href;
 
-// Starts a MutationObserver that calls onUpdate when comments change or URL changes.
-function observe(onUpdate) {
-  const debouncedUpdate = debounce(onUpdate, 800);
+// Starts a MutationObserver.
+// onUrlChange: called immediately on SPA navigation (triggers a full re-fetch).
+// onCommentChange: debounced, called when comment threads appear or disappear.
+function observe(onUrlChange, onCommentChange) {
+  const debouncedCommentChange = debounce(onCommentChange, 800);
 
   const mo = new MutationObserver((mutations) => {
-    // Ignore mutations caused by our own tab switching in fetchCounts.
     if (isFetching) return;
 
     if (location.href !== currentUrl) {
       currentUrl = location.href;
-      onUpdate();
+      onUrlChange();
       return;
     }
 
@@ -190,7 +217,7 @@ function observe(onUpdate) {
       return false;
     });
 
-    if (relevant) debouncedUpdate();
+    if (relevant) debouncedCommentChange();
   });
 
   mo.observe(document.body, {
@@ -199,7 +226,7 @@ function observe(onUpdate) {
   });
 }
 
-// Initializes the extension: waits for the tab list, fetches counts, renders badge, starts observer.
+// Initializes the extension.
 async function init() {
   const tabList = await waitForTabList();
   if (!tabList) return;
@@ -207,17 +234,30 @@ async function init() {
 
   resetBadge();
 
-  const update = async () => {
+  // Initial fetch: switch to "すべて" tab once for accurate total + unresolved.
+  const { total, unresolved } = await fetchCounts();
+  renderBadge(total, unresolved);
+  let cachedTotal = total;
+
+  // On SPA navigation: full re-fetch to update cachedTotal.
+  const onUrlChange = async () => {
     const tl = await waitForTabList();
     if (!tl) return;
     if (!document.querySelector('[data-testid="all-comments-section"]')) return;
     resetBadge();
-    const { total, unresolved } = await fetchCounts();
-    renderBadge(total, unresolved);
+    const { total: t, unresolved: u } = await fetchCounts();
+    cachedTotal = t;
+    renderBadge(t, u);
   };
 
-  await update();
-  observe(update);
+  // On comment change: read from current tab — no tab switching.
+  const onCommentChange = () => {
+    if (!document.querySelector('[data-testid="all-comments-section"]')) return;
+    const { total: t, unresolved: u } = readCountsFromCurrentTab(cachedTotal);
+    renderBadge(t, u);
+  };
+
+  observe(onUrlChange, onCommentChange);
 }
 
 if (document.readyState === 'loading') {
