@@ -15,7 +15,8 @@
   "content_scripts": [
     {
       "matches": ["https://replay.dropbox.com/*"],
-      "js": ["content.js"]
+      "js": ["content.js"],
+      "world": "MAIN"
     }
   ],
   "icons": {
