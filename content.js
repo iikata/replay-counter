@@ -29,24 +29,25 @@ function fetchCounts() {
     try {
       allTab.click();
     } catch (_) {
+      activeTab?.click();
       resolve({ total: 0, unresolved: 0 });
       return;
     }
 
     setTimeout(() => {
+      let total = 0;
+      let unresolved = 0;
       try {
         const containers = document.querySelectorAll('[data-testid="comment-thread-container"]');
-        let total = 0;
-        let unresolved = 0;
         containers.forEach((el) => {
           const isResolved = readIsResolved(el);
           if (isResolved === null) return;
           total++;
           if (!isResolved) unresolved++;
         });
-        resolve({ total, unresolved });
       } finally {
         activeTab?.click();
+        resolve({ total, unresolved });
       }
     }, 200);
   });
