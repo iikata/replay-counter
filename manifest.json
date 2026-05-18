@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Replay Comment Counter",
-  "version": "1.0",
-  "description": "Dropbox Replay の未解決コメント数をカウント表示する拡張",
+  "version": "2.0",
+  "description": "Dropbox Replay のコメント総数と未解決数をパネル上部に表示する拡張",
   "permissions": ["activeTab", "scripting"],
   "action": {
     "default_icon": {
@@ -11,9 +11,6 @@
       "128": "icons/icon128.png"
     },
     "default_title": "Replay Comment Counter"
-  },
-  "background": {
-    "service_worker": "background.js"
   },
   "content_scripts": [
     {
