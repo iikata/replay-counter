@@ -13,6 +13,8 @@ function readIsResolved(el) {
   return null;
 }
 
+const TAB_SWITCH_DELAY_MS = 200;
+
 // Temporarily switches to "すべて" tab, reads all thread resolved states via React fiber,
 // then restores the original active tab.
 // Returns Promise<{ total: number, unresolved: number }>
@@ -49,7 +51,7 @@ function fetchCounts() {
         activeTab?.click();
         resolve({ total, unresolved });
       }
-    }, 200);
+    }, TAB_SWITCH_DELAY_MS);
   });
 }
 
@@ -84,10 +86,27 @@ function renderBadge(total, unresolved) {
   `;
 }
 
-// Sets counter to loading state ("--").
+// Sets counter to loading state ("--"). Creates the element if it doesn't exist yet.
 function resetBadge() {
-  const counter = document.getElementById(COUNTER_ID);
-  if (counter) counter.innerHTML = `
+  const tabList = document.querySelector('ul.dig-Tabs-group');
+  if (!tabList) return;
+
+  let counter = document.getElementById(COUNTER_ID);
+  if (!counter) {
+    counter = document.createElement('div');
+    counter.id = COUNTER_ID;
+    counter.style.cssText = [
+      'display:flex',
+      'gap:8px',
+      'padding:6px 12px 4px',
+      'font-size:12px',
+      'font-family:inherit',
+      'align-items:center',
+    ].join(';');
+    tabList.parentElement.insertBefore(counter, tabList);
+  }
+
+  counter.innerHTML = `
     <span style="color:#aaa;">💬 合計: -- 件</span>
     <span style="color:#ccc;">|</span>
     <span style="color:#aaa;">⚠️ 未解決: -- 件</span>
