@@ -41,15 +41,18 @@ function readCountsFromCurrentTab(cachedTotal) {
   const visibleCount = containers.length;
 
   if (activeTestId === 'all-comments-section') {
-    let unresolved = 0;
+    let total = 0, unresolved = 0;
     containers.forEach((el) => {
-      if (readIsResolved(el) === false) unresolved++;
+      const isResolved = readIsResolved(el);
+      if (isResolved === null) return;
+      total++;
+      if (!isResolved) unresolved++;
     });
-    return { total: cachedTotal, unresolved };
+    return { total, unresolved };
   }
 
   if (activeTestId === 'unresolved-comments-section') {
-    return { total: cachedTotal, unresolved: visibleCount };
+    return { total: Math.max(cachedTotal, visibleCount), unresolved: visibleCount };
   }
 
   if (activeTestId === 'resolved-comments-section') {
@@ -254,6 +257,7 @@ async function init() {
   const onCommentChange = () => {
     if (!document.querySelector('[data-testid="all-comments-section"]')) return;
     const { total: t, unresolved: u } = readCountsFromCurrentTab(cachedTotal);
+    cachedTotal = t;
     renderBadge(t, u);
   };
 
